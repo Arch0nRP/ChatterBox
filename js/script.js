@@ -16,24 +16,27 @@ const db = firebase.firestore();
 const loginContainer = document.getElementById('login-container');
 const chatContainer = document.getElementById('chat-container');
 const chatBox = document.getElementById('chat-box');
+const loginError = document.getElementById('login-error');
 
-// Secure Login
+// Secure Login with Error Handling
 function login() {
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
 
     if (username && password === 'correct_password') { // Replace with a secure method
         auth.signInAnonymously().then(() => {
-            localStorage.setItem('username', username);
+            localStorage.setItem('username', escapeHtml(username));
             showChat();
         }).catch(error => {
-            console.error(error);
+            loginError.textContent = 'Login failed. Please try again.';
+            console.error('Login error:', error);
         });
     } else {
-        alert('Incorrect username or password');
+        loginError.textContent = 'Incorrect username or password';
     }
 }
 
+// Show Chat Room
 function showChat() {
     loginContainer.style.display = 'none';
     chatContainer.style.display = 'block';
@@ -43,12 +46,13 @@ function showChat() {
         snapshot.forEach(doc => {
             const message = doc.data();
             const messageElement = document.createElement('div');
-            messageElement.textContent = `${message.username}: ${message.text}`;
+            messageElement.textContent = `${escapeHtml(message.username)}: ${escapeHtml(message.text)}`;
             chatBox.appendChild(messageElement);
         });
     });
 }
 
+// Send Message
 function sendMessage() {
     const messageInput = document.getElementById('message');
     const message = messageInput.value;
@@ -56,20 +60,23 @@ function sendMessage() {
     if (message.trim()) {
         db.collection('messages').add({
             username: localStorage.getItem('username'),
-            text: message,
+            text: escapeHtml(message),
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        }).catch(error => {
+            console.error('Error sending message:', error);
         });
         messageInput.value = '';
     }
 }
 
+// Logout
 function logout() {
     auth.signOut().then(() => {
         localStorage.removeItem('username');
         chatContainer.style.display = 'none';
         loginContainer.style.display = 'block';
     }).catch(error => {
-        console.error(error);
+        console.error('Logout error:', error);
     });
 }
 
@@ -81,3 +88,18 @@ function escapeHtml(text) {
                .replace(/"/g, '&quot;')
                .replace(/'/g, '&#039;');
 }
+
+// Error Reporting
+window.addEventListener('error', function(event) {
+    console.error('Error occurred:', event.message, 'at', event.filename, 'line', event.lineno);
+});
+
+// Disable right-click and F12
+document.addEventListener('contextmenu', function(event) {
+    event.preventDefault();
+});
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'F12' || (event.ctrlKey && event.shiftKey && event.key === 'I') || (event.ctrlKey && event.shiftKey && event.key === 'J')) {
+        event.preventDefault();
+    }
+});
