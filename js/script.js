@@ -23,7 +23,7 @@ function login() {
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
 
-    if (username && password === 'correct_password') { // Replace with a secure method
+    if (username && password === 'doBBy@109256') { // Replace with a secure method
         auth.signInAnonymously().then(() => {
             localStorage.setItem('username', escapeHtml(username));
             showChat();
